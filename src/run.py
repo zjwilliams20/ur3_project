@@ -44,6 +44,7 @@ class ImageManager():
         self.view()
         rospy.sleep(1)
 
+
     def view(self):
         '''View the current image
         '''
