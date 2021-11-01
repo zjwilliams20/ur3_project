@@ -1,0 +1,24 @@
+outline.txt
+-----------
+Outline of ur3_project structure
+
+Features:
+ - aruco detection: camera image --> object poses
+ - pose to chess setup mapping
+ - forward/inverse kinematics to map poses to joint angles & v.v.
+ - verify chess setup integrity at startup
+ - move/capture piece functionality
+
+
+Data Flow:
+ - Input: source='A1', dest='B1'
+ - Output: Moved/captured piece or error message
+
+
+ Structure:
+ - chess
+   + matrix of piece locations
+   + determines piece mobility (legal_move, movement_obstruction)
+ - robotics
+   + translates user input to piece movement
+   + maps piece locations via aruco detections

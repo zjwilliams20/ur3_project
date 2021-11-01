@@ -11,8 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   ur3_driver
   rospy
   std_msgs
+  sensor_msgs
   geometry_msgs
   cv_camera
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -51,7 +53,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  ids.msg
+  Aruco.msg
+  Box.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -109,6 +112,7 @@ catkin_package(
 #  LIBRARIES lab2pkg_py
 #  CATKIN_DEPENDS ece470_ur3_driver roscpp rospy std_msgs
 #  DEPENDS system_lib
+CATKIN_DEPENDS message_runtime geometry_msgs
 )
 
 ###########

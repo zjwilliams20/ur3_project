@@ -2,21 +2,26 @@
 <package format="2">
   <name>ur3_project</name>
   <version>0.0.0</version>
-  <description>The lab2pkg_py package</description>
+  <description>The ur3_project package</description>
   <license>MIT</license>
   <author email="zjw4@illinois.edu">Zach Williams</author>
   <maintainer email="zjw4@illinois.edu">Zach Williams</maintainer>
   <url type="repository">https://github.com/zjwilliams20/ur3-project</url>
   <url type="website">https://publish.illinois.edu/ece470-intro-robotics/project-fall-2021/</url>
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>ur3_driver</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>ur3_driver</build_depend>
+  <build_depend>message_generation</build_depend>
   <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>ur3_driver</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
   <export>
   </export>
 </package>
