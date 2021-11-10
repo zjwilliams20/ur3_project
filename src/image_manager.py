@@ -13,8 +13,6 @@ from sensor_msgs.msg import Image
 from ur3_project.msg import Aruco, Box
 
 
-CHESS_DICT = aruco.DICT_ARUCO_ORIGINAL
-CALLBACK_DELAY = 0.1
 Z_PIECE = 0
 
 WHITE_PIECES = range(301, 317)
@@ -24,6 +22,9 @@ MISC_MARKERS = range(100, 104)
 
 class ImageManager(object):
     """Manager of cv_camera_node publisher and subscriber, and image processing"""
+    
+    CHESS_DICT = aruco.DICT_ARUCO_ORIGINAL
+    CALLBACK_DELAY = 0.1
 
     def __init__(self):
 
@@ -54,14 +55,14 @@ class ImageManager(object):
         self.aruco_pub.publish(boxes=boxes)
 
         self.view()
-        rospy.sleep(CALLBACK_DELAY)
+        rospy.sleep(self.CALLBACK_DELAY)
 
     def aruco_detect(self, do_annotation=True):
         """Detect all aruco markers in the current image
         """
 
         aruco_params = aruco.DetectorParameters_create()
-        aruco_dict = aruco.Dictionary_get(CHESS_DICT)
+        aruco_dict = aruco.Dictionary_get(self.CHESS_DICT)
         corners, ids, _ = aruco.detectMarkers(self.image, aruco_dict, parameters=aruco_params)
 
         # Remove detections with strange ID's, sometimes 3 horizontal squares gets picked up as 1023

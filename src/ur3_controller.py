@@ -35,7 +35,7 @@ class Ur3Controller(object):
         self.grip_sub = rospy.Subscriber('ur3/gripper_input', gripper_input, self.gripper_cb)
 
     def position_cb(self, msg):
-        """Whenever ur3/position publishes info, this callback function is called."""
+        """Whenever ur3/position publishes info, update member data."""
 
         self.thetas = np.array(msg.position)
         self.pos_set = True
@@ -84,7 +84,7 @@ class Ur3Controller(object):
 
         self.suck_set = suck_set
         
-        # NOTE: we use move_arm, since io_0 and destination are combined the command message.
+        # NOTE: we use move_theta, since io_0 and destination are combined in the command message.
         return self.move_theta(self.curr_dest)
 
     def _fk(self, theta):
