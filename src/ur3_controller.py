@@ -144,25 +144,23 @@ class Ur3Controller(object):
         theta_4 = -(gamma - beta)
         assert theta_4 - (theta_3 - theta_2) <= EPS, '-(gamma - beta) must == theta_3 - theta_2.'
 
-        theta = [theta_1, theta_2, theta_3, theta_4, np.radians(-90), theta_6]
-        print([np.degrees(t) for t in theta])
-        return self._fk(theta)
+        return self._fk([theta_1, theta_2, theta_3, theta_4, np.radians(-90), theta_6])
 
     def demo(self):
         """Demonstrate move functionality of ur3 arm controller."""
 
         self.move_theta(home)
-        time.sleep(1)
-        self.move_theta(board)
-        self.sucker(SUCKER_ON)
-        time.sleep(1)
-        self.move_theta(home)
-        time.sleep(1)
+        # time.sleep(1)
+        # self.move_theta(board)
+        # self.sucker(SUCKER_ON)
+        # time.sleep(1)
+        # self.move_theta(home)
+        # time.sleep(1)
 
-        pos = np.array([220, 220, 220]) * 1e-3
-        self.move_pos(pos)
-        time.sleep(1)
-        self.move_theta(home)
-        time.sleep(1)
+        # pos = np.array([220, 220, 220]) * 1e-3
+        # self.move_pos(pos)
+        # time.sleep(1)
+        # self.move_theta(home)
+        # time.sleep(1)
 
         

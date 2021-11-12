@@ -18,6 +18,7 @@ bracket = lambda omega, v: np.vstack([
 deg2rad = lambda theta: theta * np.pi/180
 loc = lambda a, b, c: arccos((a**2 + b**2 - c**2) / (2*a*b))
 
+# --- Inverse Kinematics ---
 # link lengths
 L1 = 152e-3
 # L2 = 120e-3 # unused
@@ -50,7 +51,7 @@ board = np.radians([180, -45, 45, -90, -90, 135])
 
 N_JOINTS = 6
 
-# -- M and S matrices necessary for forward kinematics
+# --- Forward Kinematics ---
 R = np.array([
     [0, -1, 0],
     [0, 0, -1],
@@ -80,3 +81,17 @@ v = np.array([
 ])
 
 S = [bracket(omega[i], v[i,np.newaxis].T) for i in range(N_JOINTS)]
+
+
+# --- Image Processing ---
+BETA = 744. # pixels / meter
+THETA = np.radians(0)
+
+OR = -240.0
+OC = -320.0
+
+TX = -(OR + 42.0)
+TY = -(OC + 248.0)
+
+ORIGIN = (-int(OC), -int(OR))
+RED = (255, 0, 0)
