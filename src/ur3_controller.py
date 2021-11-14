@@ -1,8 +1,9 @@
-# ur3_utils.py
+# ur3_controller.py
 # utilities for controlling the UR3 arm
 
 
 import time
+from warnings import warn
 from functools import reduce
 
 import numpy as np
@@ -13,8 +14,13 @@ import rospy
 from ur3_driver.msg import command
 from ur3_driver.msg import position
 from ur3_driver.msg import gripper_input
+from ur3_project.msg import Aruco, Box
 
 from header import *
+from chess import Pos_Dict as pos_dict
+
+SUCTION_ON = True
+SUCTION_OFF = False
 
 
 class Ur3Controller(object):
@@ -27,12 +33,15 @@ class Ur3Controller(object):
         self.thetas = np.zeros(self.n_joints)
         self.curr_dest = None
         self.suck_set = False
+        self.suck_det = False
         self.pos_set = False
+        self.pieces = None
         self.loop = loop
 
         self.cmd_pub = rospy.Publisher('ur3/command', command, queue_size=10)
         self.pos_sub = rospy.Subscriber('ur3/position', position, self.position_cb)
         self.grip_sub = rospy.Subscriber('ur3/gripper_input', gripper_input, self.gripper_cb)
+        self.aruco_sub = rospy.Subscriber('aruco_id', Aruco, self.aruco_cb)
 
     def position_cb(self, msg):
         """Whenever ur3/position publishes info, update member data."""
@@ -41,9 +50,16 @@ class Ur3Controller(object):
         self.pos_set = True
 
     def gripper_cb(self, msg):
-        """When /ur3/gripper_input publishes something, update gripper I/O globals."""
+        """When /ur3/gripper_input publishes something, update gripper I/O data."""
 
-        self.suck_set = msg.DIGIN
+        self.suck_det = msg.DIGIN
+
+    def aruco_cb(self, msg):
+        """Update the chess dictionary whenever aruco_id gets published to."""
+
+        self.pieces = {}
+        for m in msg.boxes:
+            self.pieces[m.id] = np.array([[m.corners[0].x, m.corners[0].y, m.corners[0].z]]).T
 
     def move_theta(self, theta_dest):
         """Move arm to joint angles specified by destination."""
@@ -73,14 +89,37 @@ class Ur3Controller(object):
 
         return error
 
-    def move_pos(self, pos_dest, yaw=135):
+    def move_pos(self, pos_dest, yaw=0):
         """Move arm to position specified using forward and inverse kinematics."""
 
         theta_dest = self._invk(pos_dest, yaw)
         self.move_theta(theta_dest)
 
+    def move_block(self, start, end):
+        """
+        Move block from starting to end position.
+        """
+
+        self.move_theta(STAGE_LOC)
+        self.move_pos(start)
+        self.sucker(SUCTION_ON)
+        self.move_theta(STAGE_LOC)
+
+        if not self.suck_det:
+            self.sucker(SUCTION_OFF)
+            self.move_theta(STAGE_LOC)
+            warn("Couldn't find block...")
+            return NO_ERR
+
+        self.move_pos(end)
+        time.sleep(1)
+        self.sucker(SUCTION_OFF)
+        self.move_theta(STAGE_LOC)
+
+        return NO_ERR
+
     def sucker(self, suck_set=False):
-        """Turn suction on or off"""
+        """Turn suction on or off."""
 
         self.suck_set = suck_set
         
@@ -149,18 +188,22 @@ class Ur3Controller(object):
     def demo(self):
         """Demonstrate move functionality of ur3 arm controller."""
 
+        ID_GRAB = 205
+        # pos = np.array([[0.1, 0., 0.1]]).T # (220, 64)
+        # pos = np.array([[0.2, 0.0, 0.1]]).T # (220, 159)
         self.move_theta(home)
-        # time.sleep(1)
-        # self.move_theta(board)
-        # self.sucker(SUCKER_ON)
-        # time.sleep(1)
-        # self.move_theta(home)
-        # time.sleep(1)
 
-        # pos = np.array([220, 220, 220]) * 1e-3
-        # self.move_pos(pos)
-        # time.sleep(1)
-        # self.move_theta(home)
-        # time.sleep(1)
+        while self.pieces is None or ID_GRAB not in self.pieces:
+            rospy.loginfo('Waiting...')
+            time.sleep(0.5)
+        print(self.pieces)
+
+        # self.move_pos(self.pieces[ID_GRAB])
+        start_pos = self.pieces[ID_GRAB] # A7
+        end_pos = np.array([pos_dict['E6'][:3]]).T
+
+        self.move_block(start_pos, end_pos)
+        # print(start_pos, end_pos)
+
 
         

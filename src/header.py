@@ -84,14 +84,30 @@ S = [bracket(omega[i], v[i,np.newaxis].T) for i in range(N_JOINTS)]
 
 
 # --- Image Processing ---
-BETA = 744. # pixels / meter
+BETA = 745.0 # pixels / meter
 THETA = np.radians(0)
 
 OR = -240.0
 OC = -320.0
 
-TX = -(OR + 42.0)
-TY = -(OC + 248.0)
+TX = -(OR + 25.0)
+TY = -(OC + 242.0)
+ZW = 0.040
+
+RCW = np.array([
+    [np.cos(THETA), -np.sin(THETA),     0],
+    [np.sin(THETA),  np.cos(THETA),     0],
+    [0            ,  0            ,     1]
+])
 
 ORIGIN = (-int(OC), -int(OR))
-RED = (255, 0, 0)
+ORIGIN_W = (int(-(TY + OC)), int(-(TX + OR)))
+RED = (0, 0, 255)
+BLUE = (255, 0, 0)
+
+# STAGE_LOC = np.radians(
+#     [163.58, -77.66, 95.96, -108.9, -90.0, 75.06]
+# )
+STAGE_LOC = board
+
+NO_ERR = 0

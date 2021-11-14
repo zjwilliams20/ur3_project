@@ -74,7 +74,7 @@ class ImageManager(object):
         if do_annotation:
             _ = aruco.drawDetectedMarkers(self.image, corners, ids)
         
-        return ids, corners
+        return ids, np.array(corners)
 
     def view(self):
         """View the current image with annotations."""
@@ -83,10 +83,19 @@ class ImageManager(object):
             return
         
         # Annotate image origin
-        draw_plus(self.image, ORIGIN)
+        draw_plus(self.image, ORIGIN, BLUE)
+        draw_plus(self.image, ORIGIN_W, RED)
 
         cv2.imshow('ImageManager', self.image)
         cv2.waitKey(1)
+
+        # c1 = np.array([220, 64])
+        # c2 = np.array([220, 159])
+        # c1 = np.array([534, 106.25])
+        # c2 = np.array([258, 105])
+
+        # beta, theta = calibrate(c1, c2)
+        # print('beta: %.3g, theta= %.3g' % (beta, theta))
 
 
 def IMG2W(r, c):
@@ -103,21 +112,42 @@ def IMG2W(r, c):
 
 
 def corners2boxes(ids, corners):
-    """Convert array of corners into a box messages"""
+    """Convert array of corners into a box messages."""
 
     boxes = []
     for ibox, box_corners in enumerate(corners):
-        boxes.append(Box(ids[ibox], [Point(x=corner[0], y=corner[1]) for corner in box_corners[0]]))
+        # Compute box centroid.
+        centroid = np.array([np.mean(box_corners[0,:,0]), np.mean(box_corners[0,:,1])])
+        # Convert to world coordinates.
+        # print(ids[ibox], centroid[0], centroid[1])
+        centroid = IMG2W(int(centroid[1]), int(centroid[0]))
+        boxes.append(Box(ids[ibox], [Point(x=centroid[0], y=centroid[1], z=centroid[2])]))
     return boxes
 
 
-def draw_plus(image, point):
+def draw_plus(image, point, color=RED):
     """Draw a plus at the specified point."""
 
-    left = (point[0]-10, point[1])
-    right = (point[0]+10, point[1])
-    upper = (point[0], point[1]+10)
-    lower = (point[0], point[1]-10)
+    WIDTH = 10
 
-    cv2.line(image, left, right, RED, thickness=1)
-    cv2.line(image, lower, upper, RED, thickness=1)
+    left = (point[0]-WIDTH, point[1])
+    right = (point[0]+WIDTH, point[1])
+    upper = (point[0], point[1]+WIDTH)
+    lower = (point[0], point[1]-WIDTH)
+
+    cv2.line(image, left, right, color, thickness=1)
+    cv2.line(image, lower, upper, color, thickness=1)
+
+
+def calibrate(centroid_1, centroid_2):
+    '''Compute beta as the ratio between pixels to distance
+    '''
+
+    # left & right in camera's frame, which is y in world frame
+    centroid_L = centroid_1 if centroid_1[1] < centroid_2[1] else centroid_2
+    centroid_R = centroid_2 if centroid_1 is centroid_L else centroid_1
+
+    beta = np.linalg.norm(centroid_1 - centroid_2) / 370.5e-3
+    theta = np.degrees(np.arctan2(centroid_R[0] - centroid_L[0], centroid_R[1] - centroid_L[1]))
+
+    return beta, theta

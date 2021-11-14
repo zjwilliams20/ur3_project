@@ -10,7 +10,8 @@ from geometry_msgs.msg import Point
 from std_msgs.msg import Int32MultiArray
 
 import os
-IMG_PATH = os.path.dirname(os.path.realpath(__file__)) + '/aruco-test.png'
+# IMG_PATH = os.path.dirname(os.path.realpath(__file__)) + '/aruco-test.png'
+IMG_PATH = os.path.dirname(os.path.realpath(__file__)) + '/test2.png'
 print(IMG_PATH)
 
 ARUCO_DICT = {
@@ -91,13 +92,13 @@ if __name__ == '__main__':
     # find_aruco_dict(img)
 
     ids, corners = aruco_read(img)
-    points = []
-    for ibox, box in enumerate(corners):
-        points.append([Point(x=corner[0], y=corner[1]) for corner in box[0]])
+    # points = []
+    # for ibox, box in enumerate(corners):
+    #     points.append([Point(x=corner[0], y=corner[1]) for corner in box[0]])
 
-    # plt.figure()
-    # cv2.imshow('image', img)
-    # cv2.waitKey(0)
+    plt.figure()
+    cv2.imshow('image', img)
+    cv2.waitKey(0)
 
 
     
