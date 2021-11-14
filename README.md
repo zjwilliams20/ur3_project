@@ -7,8 +7,10 @@ Location for ECE 470 Introduction to Robotics Project with the UR3 Arm
 - Zach Williams
 
 ### Installation Instructions:
+- Clone github project into the catkin workspace source folder
 - Run `source install.bash` script to install the necessary submodules.
 - To reinstall the submodules for whatever reason, run `source install.bash -r`.
+- 'lab2pkg_py' needs to be in the source of the workspace as well and after run 'catkin_make'.
 
 ### Execution Instructions:
 - Source the respective workspace's `setup.bash` before running `ros` commands.
