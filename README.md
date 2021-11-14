@@ -21,3 +21,5 @@ Location for ECE 470 Introduction to Robotics Project with the UR3 Arm
 - [ur3-project Github](https://github.com/zjwilliams20/ur3-project)
 - [ECE 470 Lab Page](http://coecsl.ece.illinois.edu/ece470/)
 - [ECE 470 Course Page](https://publish.illinois.edu/ece470-intro-robotics/)
+- [Project Update 1](https://www.youtube.com/watch?v=DePxuUacaB4)
+- [Project Update 2](https://youtu.be/qyPXRhmKxKo)
