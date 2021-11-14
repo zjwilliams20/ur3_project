@@ -13,10 +13,10 @@ Location for ECE 470 Introduction to Robotics Project with the UR3 Arm
 - `lab2pkg_py` needs to be in the source of the workspace as well and after run `catkin_make`.
 
 ### Execution Instructions:
-- Source the respective workspace's `setup.bash` before running `ros` commands.
-- Also run `source src/setup.bash` in order to set the necessary environment variables.
+- Source the respective workspace's `source devel/setup.bash` before running `ros` commands.
+- Also run `source src/setup.bash` from the project directory in order to set the necessary environment variables.
 - In one terminal, kickoff the project's gazebo simulation: `roslaunch ur3_project test.launch`
-- In another terminal, source the respective workspace's `setup.bash` abd run `source src/setup.bash`. After run the execution script: `rosrun ur3_project run.py`
+- In another terminal, again source the respective workspace's `source devel/setup.bash` abd run `source src/setup.bash`. After run the execution script: `rosrun ur3_project run.py`
 - You should now be able to view the chess board from the perspective of the camera. 
 
 ### Links:
