@@ -15,7 +15,7 @@ Location for ECE 470 Introduction to Robotics Project with the UR3 Arm
 ### Execution Instructions:
 - Source the respective workspace's `setup.bash` before running `ros` commands.
 - Also run `source src/setup.bash` in order to set the necessary environment variables.
-- In one terminal, kickoff the project's gazebo simulation: `roslaunch ur3_project project.launch`
+- In one terminal, kickoff the project's gazebo simulation: `roslaunch ur3_project chess.launch`
 - In another terminal, run the execution script: `rosrun ur3_project run.py`
 - You should now be able to view the chess board from the perspective of the camera. 
 
