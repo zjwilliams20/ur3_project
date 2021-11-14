@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # scratch.py
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 import cv2
@@ -63,7 +64,7 @@ def aruco_read(img, do_annotation=True):
 
     aruco_params = aruco.DetectorParameters_create()
     aruco_dict = aruco.Dictionary_get(CHESS_DICT)
-    corners, ids, _ = aruco.detectMarkers(img, aruco_dict, parameters=aruco_params)
+    corners, ids, rejected = aruco.detectMarkers(img, aruco_dict, parameters=aruco_params)
 
     # Remove detections with strange ID's
     valid_mask = ids <= 1000
@@ -72,7 +73,8 @@ def aruco_read(img, do_annotation=True):
 
     # Draw the frames of the detected markers
     if do_annotation:
-        _ = aruco.drawDetectedMarkers(img, corners, ids)
+        # _ = aruco.drawDetectedMarkers(img, corners, ids)
+        _ = aruco.drawDetectedMarkers(img, rejected, -np.arange(len(rejected)))
     
     return ids, corners
 

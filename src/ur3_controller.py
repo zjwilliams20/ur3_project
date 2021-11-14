@@ -96,9 +96,7 @@ class Ur3Controller(object):
         self.move_theta(theta_dest)
 
     def move_block(self, start, end):
-        """
-        Move block from starting to end position.
-        """
+        """Move block from starting to end position."""
 
         self.move_theta(STAGE_LOC)
         self.move_pos(start)
@@ -185,6 +183,24 @@ class Ur3Controller(object):
 
         return self._fk([theta_1, theta_2, theta_3, theta_4, np.radians(-90), theta_6])
 
+    def validate_move(self):
+        """
+        1. Does the move make sense?
+        2. Can the pieces do that?
+        3. Is there a pieces there?
+        """
+
+        pass
+
+    def move_piece(self):
+        """
+        1. Input: "A1", "A3"
+        2. validate_move
+        3. move_block
+        """
+
+        pass
+
     def demo(self):
         """Demonstrate move functionality of ur3 arm controller."""
 
@@ -193,16 +209,16 @@ class Ur3Controller(object):
         # pos = np.array([[0.2, 0.0, 0.1]]).T # (220, 159)
         self.move_theta(home)
 
-        while self.pieces is None or ID_GRAB not in self.pieces:
-            rospy.loginfo('Waiting...')
-            time.sleep(0.5)
-        print(self.pieces)
+        # while self.pieces is None or ID_GRAB not in self.pieces:
+        #     rospy.loginfo('Waiting...')
+        #     time.sleep(0.5)
+        # print(self.pieces)
 
-        # self.move_pos(self.pieces[ID_GRAB])
-        start_pos = self.pieces[ID_GRAB] # A7
-        end_pos = np.array([pos_dict['E6'][:3]]).T
+        # # self.move_pos(self.pieces[ID_GRAB])
+        # start_pos = self.pieces[ID_GRAB] # A7
+        # end_pos = np.array([pos_dict['E6'][:3]]).T
 
-        self.move_block(start_pos, end_pos)
+        # self.move_block(start_pos, end_pos)
         # print(start_pos, end_pos)
 
 

@@ -1,6 +1,52 @@
 import numpy as np
 
 
+def char_range(c1, c2):
+    """Generates the characters from `c1` to `c2`, inclusive."""
+    
+    if ord(c2) > ord(c1):
+        iters = range(ord(c1), ord(c2)+1, 1)
+    else:
+        iters = range(ord(c1), ord(c2)-1, -1)
+
+    return [chr(c) for c in iters]
+
+
+def num_range(n1, n2):
+    """Generates the numbers `n1` to `n2`, inclusive."""
+
+    n1 = int(n1)
+    n2 = int(n2)
+
+    if n2 > n1:
+        iters = range(n1, n2+1, 1)
+    else:
+        iters = range(n1, n2-1, -1)
+    
+    return [str(i) for i in iters]
+
+
+def gen_moves(start, end):
+    """Generates the sequence of moves from start to end. This assumes the moves are valid."""
+
+    assert start != end, 'Invalid move from %s to %s.' % (start, end)
+
+    rows = char_range(start[0], end[0])
+    cols = num_range(start[1], end[1])
+
+    # Account for column or row moves.
+    if len(rows) == 1:
+        rows = rows * len(cols)
+    if len(cols) == 1:
+        cols = cols * len(rows)
+
+    # Merge rows and columns into one list.
+    moves = []
+    for (n, b) in zip(rows, cols):
+        moves.append(n+b)
+
+    return moves
+
 # PosMat = np.array([     [[A8,loc,BRL],[B8,loc,BKL],[C8,loc,BBL],[D8,loc,BQ ],[E8,loc,BX ],[F8,loc,BBR],[G8,loc,BKR],[H8,loc,BRR]],
 #                         [[A7,loc,BP1],[B7,loc,BP2],[C7,loc,BP3],[D7,loc,BP4],[E7,loc,BP5],[F7,loc,BP6],[G7,loc,BP7],[H7,loc,BP8]],
 #                         [[A6,loc,0  ],[B6,loc,0  ],[C6,loc,0  ],[D6,loc,0  ],[E6,loc,0  ],[F6,loc,0  ],[G6,loc,0  ],[H6,loc,0  ]],

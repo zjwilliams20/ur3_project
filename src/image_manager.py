@@ -34,8 +34,10 @@ class ImageManager(object):
         self.fig, self.ax = plt.subplots(1)
         self.bridge = CvBridge()
 
-        # Output of camera image.
-        self.image = None
+        # Image to include in the processing pipeline.
+        self.proc_image = None
+        # Image to display for sanity checks.
+        self.raw_image = None
 
         # Initialize necessary publishers and subscribers.
         self.img_pub = rospy.Publisher('cv_camera/image_raw', Image, queue_size=1)
@@ -46,10 +48,15 @@ class ImageManager(object):
         """Camera callback that captures puts an image into OpenCV and searches for
            aruco markers."""
 
-        raw_image = self.bridge.imgmsg_to_cv2(msg)
+        self.raw_image = self.bridge.imgmsg_to_cv2(msg)
 
         # Flip the image to be consistent with Lab 5.
-        self.image = cv2.flip(raw_image, -1)
+        self.raw_image = cv2.flip(self.raw_image, -1)
+        self.raw_image = enlarge(self.raw_image, 200)
+
+        self.proc_image = self.raw_image.copy()
+        self.proc_image = cv2.cvtColor(self.proc_image, cv2.COLOR_BGR2GRAY)
+        _, self.proc_image = cv2.threshold(self.proc_image, 127, 255, cv2.THRESH_BINARY)
 
         ids, corners = self.aruco_detect()
         boxes = corners2boxes(ids, corners)
@@ -61,32 +68,37 @@ class ImageManager(object):
     def aruco_detect(self, do_annotation=True):
         """Detect all aruco markers in the current image."""
 
+        corners = None
+        
         aruco_params = aruco.DetectorParameters_create()
         aruco_dict = aruco.Dictionary_get(self.CHESS_DICT)
-        corners, ids, _ = aruco.detectMarkers(self.image, aruco_dict, parameters=aruco_params)
+        corners, ids, rejected = aruco.detectMarkers(self.proc_image, aruco_dict, parameters=aruco_params)
 
         # Remove detections with strange ID's, sometimes 3 horizontal squares gets picked up as 1023
         valid_mask = ids <= 1000
-        ids = ids[valid_mask]
-        corners = [corner for i, corner in enumerate(corners) if valid_mask[i]]
+        if ids is not None:
+            ids = ids[valid_mask]
+            corners = [corner for i, corner in enumerate(corners) if valid_mask[i]]
 
         # Draw the frames of the detected markers
         if do_annotation:
-            _ = aruco.drawDetectedMarkers(self.image, corners, ids)
+            # _ = aruco.drawDetectedMarkers(self.raw_image, corners, ids)
+            _ = aruco.drawDetectedMarkers(self.raw_image, rejected, np.arange(len(rejected)))
         
         return ids, np.array(corners)
 
     def view(self):
         """View the current image with annotations."""
 
-        if self.image is None:
+        if self.proc_image is None:
             return
         
         # Annotate image origin
-        draw_plus(self.image, ORIGIN, BLUE)
-        draw_plus(self.image, ORIGIN_W, RED)
+        draw_plus(self.proc_image, ORIGIN, BLUE)
+        draw_plus(self.proc_image, ORIGIN_W, RED)
 
-        cv2.imshow('ImageManager', self.image)
+        cv2.imshow('Processed Image', self.proc_image)
+        cv2.imshow('Raw Image', self.raw_image)
         cv2.waitKey(1)
 
         # c1 = np.array([220, 64])
@@ -137,6 +149,21 @@ def draw_plus(image, point, color=RED):
 
     cv2.line(image, left, right, color, thickness=1)
     cv2.line(image, lower, upper, color, thickness=1)
+
+
+def enlarge(image, percent):
+    """Grow an image along x and y at the specified percentage."""
+    
+    width = int(image.shape[1] * percent / 100)
+    height = int(image.shape[0] * percent / 100)
+    dim = (width, height)
+    
+    # Enlarge image to help out Aruco.
+    # interp = cv2.INTER_AREA
+    # interp = cv2.INTER_NEAREST
+    # interp = cv2.INTER_LINEAR
+    interp = cv2.INTER_CUBIC
+    return cv2.resize(image, dim, interpolation=interp)
 
 
 def calibrate(centroid_1, centroid_2):
