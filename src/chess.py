@@ -56,6 +56,47 @@ def gen_moves(start, end):
 #                         [[A2,loc,WP1],[B2,loc,WP2],[C2,loc,WP3],[D2,loc,WP4],[E2,loc,WP5],[F2,loc,WP6],[G2,loc,WP7],[H2,loc,WP8]],
 #                         [[A1,loc,WRL],[B1,loc,WKL],[C1,loc,WBL],[D1,loc,WQ ],[E1,loc,WX ],[F1,loc,WBR],[G1,loc,WKR],[H1,loc,WRR]]       ])
 
+#ROBO CANT REACH FULL RANGE - PUSH CLOSER AND CHANGE x_o & y_o
+BRL = 209 
+BRR = 210
+BKL = 211
+BKR = 212
+BBL = 213
+BBR = 214
+BP1 = 201
+BP2 = 202
+BP3 = 203
+BP4 = 204
+BP5 = 205
+BP6 = 206
+BP7 = 207
+BP8 = 208
+BQ = 216
+BX = 215
+#orentation of sitting across from the robot 
+top_left = 102
+top_right = 100
+bottom_left = 103
+bottom_right = 101
+
+WRL = 309
+WRR = 310
+WKL = 311
+WKR = 312
+WBL = 313
+WBR = 314
+WP1 = 301
+WP2 = 302
+WP3 = 303
+WP4 = 304
+WP5 = 305
+WP6 = 306
+WP7 = 307
+WP8 = 308
+WQ = 315
+WX = 316
+
+
 
 #ROBO CANT REACH FULL RANGE - PUSH CLOSER AND CHANGE x_o & y_o
 s = 50
@@ -63,6 +104,7 @@ h = 50
 y = 0 
 x_o = 146
 y_o = 33
+
 Pos_Dict = {
     "A1": [x_o+s*7, y_o,     h, y, 0], 
     "A2": [x_o+s*6, y_o,     h, y, 0],
