@@ -3,7 +3,6 @@ import numpy as np
 
 def char_range(c1, c2):
     """Generates the characters from `c1` to `c2`, inclusive."""
-    
     if ord(c2) > ord(c1):
         iters = range(ord(c1), ord(c2)+1, 1)
     else:
@@ -14,7 +13,6 @@ def char_range(c1, c2):
 
 def num_range(n1, n2):
     """Generates the numbers `n1` to `n2`, inclusive."""
-
     n1 = int(n1)
     n2 = int(n2)
 
@@ -57,7 +55,6 @@ def gen_moves(start, end):
 #                         [[A1,loc,WRL],[B1,loc,WKL],[C1,loc,WBL],[D1,loc,WQ ],[E1,loc,WX ],[F1,loc,WBR],[G1,loc,WKR],[H1,loc,WRR]]       ])
 
 
-#ROBO CANT REACH FULL RANGE - PUSH CLOSER AND CHANGE x_o & y_o
 BRL = 209 
 BRR = 210
 BKL = 211
@@ -177,36 +174,33 @@ Pos_Dict = {
     "H8": [x_o+s*0, y_o+s*7, h, y, 0],    }
 
 
-def obstructed_move(piece,pos,dest): 
-
-    deltaH = abs(ord(dest[0]) - ord(pos[0]))
-    deltaV = abs(ord(dest[1]) - ord(pos[1]))
+def obstructed_move(start,end,piece): 
 
     if piece[1] == "K":     #knight jumps all
         return "move"
 
-    elif deltaH == deltaV:      #diagonal move
-        return
-
-    elif deltaV == 0:    #horizontal move 
-        while pos != dest: 
-            #pos = #change position by one square
-            return 
-        return
-
-    elif deltaH == 0:    #vertical move
-        return
-
     else: 
-        return "something broken :/" 
+        x123 = gen_moves(start,end)
+        #check path to target destination
+        #check each element ie chess square in the moves list below using CV 
+        moves = moves[1:]
 
-    return "did not successfully check"
+        for i in range(len(moves))
+            #check square with CV cmd here
 
-    
-         
+            # if square is empty:
+            #     pass
+            # elif  i == (len(moves) - 1) and square is not empty
+            #    return "take piece"
+
+            # else:
+            #     return "obstructed"
+
+    return "move"
 
 
-def legal_move(piece,pos,dest): 
+
+def legal_move(start,end,piece): 
 
     #Positive is right
     deltaH = ord(dest[0]) - ord(pos[0])
@@ -217,6 +211,8 @@ def legal_move(piece,pos,dest):
     if piece[1] == "R":     #rook
         if deltaH != 0 and deltaV != 0:
             raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+        else:
+            return "move"
 
     elif piece[1] =="K":    #knight     
         if abs(deltaH) == 2 and abs(deltaV) == 1:
@@ -245,6 +241,8 @@ def legal_move(piece,pos,dest):
     elif piece[1] == "X":   #king
         if abs(deltaH) > 1 or abs(deltaV) > 1:
             raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+        else:
+            return "move"
 
     elif piece[1] == "P":   #pawn
         if  deltaH == 0 and abs(deltaV) == 1:  
@@ -255,15 +253,20 @@ def legal_move(piece,pos,dest):
               else:
                   raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
         
-        # elif call adjacent obstruction == yes and one movement in diagonal
-        #   return "move"
-        
+        elif obstructed_move(start,end,piece) == "take piece" and abs(deltaV) = 1:
+              if piece[:2] == "BP" and deltaV == -1 and abs(deltaH) == 1:
+                  return "move"
+              elif  piece[:2] == "WP" and deltaV == 1 and abs(deltaH) == 1:
+                  return "move"
+              else:
+                  raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+
         else:
           raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
 
 
     else:
-        return ""
+        return "blank"
 
     return 
 

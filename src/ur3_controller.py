@@ -18,6 +18,7 @@ from ur3_project.msg import Aruco, Box
 
 from header import *
 from chess import Pos_Dict as pos_dict
+import chess_func as cf
 
 SUCTION_ON = True
 SUCTION_OFF = False
@@ -183,21 +184,90 @@ class Ur3Controller(object):
 
         return self._fk([theta_1, theta_2, theta_3, theta_4, np.radians(-90), theta_6])
 
-    def validate_move(self):
+    def validate_move(self,start,end,piece):
         """
-        1. Does the move make sense?
+        1. Is the the move obstructed?
         2. Can the pieces do that?
         3. Is there a pieces there?
         """
+        ov = cf.obstructed_move(start,end,piece)
+        lmv = cf.legal_move(start,end,piece)
 
-        pass
+        if lmv != "move"
+            return "Not a legal move"
+        elif ov == "obstructed"
+            return "The move is obstructed"
+        return None
+        
+
+    def usr_input(self): 
+        """prompt virtual player for a start and end location"""
+        start = 0
+        end = 0 
+
+        while start == end:
+
+            while start == 0:
+
+                input_string_srt = raw_input("Enter a start coordinate using an uppercase letter and an integer: ")
+  
+                if len(input_string_srt) != 2: #more than 2 character input 
+                    print("Please enter a start coordinate 2 characters long, an uppercase letter and an integer")
+
+                elif ord(input_string_srt[0]) > 90:  #entered upper case letters or to high of numbers
+                    print("Please use upper case letters in your start coordinate")
+
+                elif ord(input_string_srt[0]) > 72 or int(input_string_srt[1]) > 8: #not on board
+                    print("That start coordinate is not on the board")
+
+                else: 
+                    start = input_string_srt
+                    print("Start Coordinate noted")
+
+
+            while end == 0: 
+
+                input_string_end = raw_input("Enter an end coordinate using an uppercase letter and an integer: ")
+
+                if len(input_string_end) != 2: #more than 2 character input 
+                    print("Please enter an end coordinate 2 characters long, an uppercase letter and an integer")
+
+                elif ord(input_string_end[0]) > 90:  #entered upper case letters or to high of numbers
+                    print("Please use upper case letters in your start coordinate")
+
+                elif ord(input_string_end[0]) > 72 or int(input_string_end[1]) > 8: #not on board
+                    print("That end coordinate is not on the board")
+
+                else: 
+                    end = input_string_end
+                    print("End Coordinate noted")
+
+        start, end = input_string_srt, input_string_end
+
+        #call CV matrix to return piece
+
+        print("RoboBoi will move the piece from the start coordinate " + input_string_srt + " to the end coordinate " + input_string_end)
+        return start, end 
+
 
     def move_piece(self):
         """
-        1. Input: "A1", "A3"
+        1. user input 
         2. validate_move
         3. move_block
         """
+        start, end = self.user_input()
+        #self.validate_move() needs to raise an error
+
+        o = cf.obstructed_move(start,end,piece)   #need to source from other file
+        o = 0 
+        off_board = [0,0,0,0]
+
+        if o == "take piece":
+            self.move_block(self,end,off_board)     #fling it
+            self.move_block(self,start,end)
+        else: 
+            self.move_block(self,start,end)
 
         pass
 
