@@ -90,9 +90,9 @@ THETA = np.radians(0)
 OR = -240.0
 OC = -320.0
 
-TX = -(OR + 25.0)
-TY = -(OC + 242.0)
-ZW = 0.040
+TX = -(OR + 62.0)
+TY = -(OC + 179.0)
+ZW = 0.0
 
 RCW = np.array([
     [np.cos(THETA), -np.sin(THETA),     0],
@@ -111,3 +111,5 @@ BLUE = (255, 0, 0)
 STAGE_LOC = board
 
 NO_ERR = 0
+
+Z_OFFSET = 0.100

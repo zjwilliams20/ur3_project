@@ -14,9 +14,6 @@ from ur3_project.msg import Aruco, Box
 
 from header import *
 
-
-Z_PIECE = 0
-
 WHITE_PIECES = range(301, 317)
 BLACK_PIECES = range(201, 217)
 MISC_MARKERS = range(100, 104)
@@ -39,6 +36,19 @@ class ImageManager(object):
         # Image to display for sanity checks.
         self.raw_image = None
 
+        # Lowering the minMarkerDistanceRate is necessary to see all the black pieces in the camera frame.
+        # According to openCV, it's the "Minimum distance between any pair of corners from two different markers."
+        self.aruco_params = aruco.DetectorParameters_create()
+        self.aruco_params.minMarkerDistanceRate = 0.01
+        # self.aruco_params.minCornerDistanceRate = 0.01
+        # self.aruco_params.minDistanceToBorder = 1
+        # self.aruco_params.markerBorderBits = 1
+        # self.aruco_params.minOtsuStdDev = 1.0
+        # self.aruco_params.perspectiveRemovePixelPerCell = 20
+        # self.aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.2
+        # self.aruco_params.maxErroneousBitsInBorderRate = 0.5
+        # self.aruco_params.errorCorrectionRate = 0.3
+
         # Initialize necessary publishers and subscribers.
         self.img_pub = rospy.Publisher('cv_camera/image_raw', Image, queue_size=1)
         self.img_sub = rospy.Subscriber('/cv_camera_node/image_raw', Image, self.camera_cb)
@@ -46,17 +56,20 @@ class ImageManager(object):
 
     def camera_cb(self, msg):
         """Camera callback that captures puts an image into OpenCV and searches for
-           aruco markers."""
+           aruco markers.
+        """
 
         self.raw_image = self.bridge.imgmsg_to_cv2(msg)
 
         # Flip the image to be consistent with Lab 5.
         self.raw_image = cv2.flip(self.raw_image, -1)
-        self.raw_image = enlarge(self.raw_image, 200)
+        # self.raw_image = enlarge(self.raw_image, 100)
 
         self.proc_image = self.raw_image.copy()
-        self.proc_image = cv2.cvtColor(self.proc_image, cv2.COLOR_BGR2GRAY)
-        _, self.proc_image = cv2.threshold(self.proc_image, 127, 255, cv2.THRESH_BINARY)
+        # self.proc_image = cv2.convertScaleAbs(self.proc_image)
+        # self.proc_image = cv2.GaussianBlur(self.proc_image, (5,5), 0)
+        # self.proc_image = cv2.cvtColor(self.proc_image, cv2.COLOR_BGR2GRAY)
+        # _, self.proc_image = cv2.threshold(self.proc_image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
         ids, corners = self.aruco_detect()
         boxes = corners2boxes(ids, corners)
@@ -68,22 +81,22 @@ class ImageManager(object):
     def aruco_detect(self, do_annotation=True):
         """Detect all aruco markers in the current image."""
 
-        corners = None
-        
-        aruco_params = aruco.DetectorParameters_create()
         aruco_dict = aruco.Dictionary_get(self.CHESS_DICT)
-        corners, ids, rejected = aruco.detectMarkers(self.proc_image, aruco_dict, parameters=aruco_params)
+        corners, ids, _ = aruco.detectMarkers(self.proc_image, aruco_dict, parameters=self.aruco_params)
 
         # Remove detections with strange ID's, sometimes 3 horizontal squares gets picked up as 1023
         valid_mask = ids <= 1000
+        # valid_mask =  [[id not in MISC_MARKERS] for id in ids]
+        # print(ids not in MISC_MARKERS)
         if ids is not None:
+            # ids = ids[id for id in ids if id not in MISC_MARKERS] 
             ids = ids[valid_mask]
             corners = [corner for i, corner in enumerate(corners) if valid_mask[i]]
 
         # Draw the frames of the detected markers
         if do_annotation:
-            # _ = aruco.drawDetectedMarkers(self.raw_image, corners, ids)
-            _ = aruco.drawDetectedMarkers(self.raw_image, rejected, np.arange(len(rejected)))
+            _ = aruco.drawDetectedMarkers(self.proc_image, corners, ids)
+            # _ = aruco.drawDetectedMarkers(self.raw_image, rejected, np.arange(len(rejected)))
         
         return ids, np.array(corners)
 
@@ -98,7 +111,7 @@ class ImageManager(object):
         draw_plus(self.proc_image, ORIGIN_W, RED)
 
         cv2.imshow('Processed Image', self.proc_image)
-        cv2.imshow('Raw Image', self.raw_image)
+        # cv2.imshow('Raw Image', self.raw_image)
         cv2.waitKey(1)
 
         # c1 = np.array([220, 64])
@@ -131,7 +144,6 @@ def corners2boxes(ids, corners):
         # Compute box centroid.
         centroid = np.array([np.mean(box_corners[0,:,0]), np.mean(box_corners[0,:,1])])
         # Convert to world coordinates.
-        # print(ids[ibox], centroid[0], centroid[1])
         centroid = IMG2W(int(centroid[1]), int(centroid[0]))
         boxes.append(Box(ids[ibox], [Point(x=centroid[0], y=centroid[1], z=centroid[2])]))
     return boxes
@@ -159,10 +171,10 @@ def enlarge(image, percent):
     dim = (width, height)
     
     # Enlarge image to help out Aruco.
-    # interp = cv2.INTER_AREA
+    interp = cv2.INTER_AREA
     # interp = cv2.INTER_NEAREST
     # interp = cv2.INTER_LINEAR
-    interp = cv2.INTER_CUBIC
+    # interp = cv2.INTER_CUBIC
     return cv2.resize(image, dim, interpolation=interp)
 
 

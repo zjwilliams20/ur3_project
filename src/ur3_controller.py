@@ -9,6 +9,7 @@ from functools import reduce
 import numpy as np
 from numpy import cos, sin, arccos, arcsin, arctan2, hypot
 from scipy.linalg import expm
+from scipy.optimize import linear_sum_assignment
 
 import rospy
 from ur3_driver.msg import command
@@ -17,8 +18,11 @@ from ur3_driver.msg import gripper_input
 from ur3_project.msg import Aruco, Box
 
 from header import *
-from chess import Pos_Dict as pos_dict
 import chess_func as cf
+
+# Convert to numpy array in meters.
+from chess_func import Pos_Dict as POS_DICT
+POS_DICT = dict(map(lambda m: (m[0], 1e-3*np.array(m[1]).T), POS_DICT.items()))
 
 SUCTION_ON = True
 SUCTION_OFF = False
@@ -60,7 +64,7 @@ class Ur3Controller(object):
 
         self.pieces = {}
         for m in msg.boxes:
-            self.pieces[m.id] = np.array([[m.corners[0].x, m.corners[0].y, m.corners[0].z]]).T
+            self.pieces[m.id] = np.array([[m.corners[0].x, m.corners[0].y]]).T
 
     def move_theta(self, theta_dest):
         """Move arm to joint angles specified by destination."""
@@ -99,21 +103,28 @@ class Ur3Controller(object):
     def move_block(self, start, end):
         """Move block from starting to end position."""
 
-        self.move_theta(STAGE_LOC)
+        offset = np.array([
+            [0, 0, Z_OFFSET]
+        ]).T
+        start_stage = start + offset
+        end_stage = end + offset
+
+        self.move_pos(start_stage)
         self.move_pos(start)
         self.sucker(SUCTION_ON)
-        self.move_theta(STAGE_LOC)
+        self.move_pos(start_stage)
 
         if not self.suck_det:
             self.sucker(SUCTION_OFF)
-            self.move_theta(STAGE_LOC)
+            self.move_pos(start_stage)
             warn("Couldn't find block...")
             return NO_ERR
 
         self.move_pos(end)
         time.sleep(1)
         self.sucker(SUCTION_OFF)
-        self.move_theta(STAGE_LOC)
+        time.sleep(2)
+        self.move_pos(end_stage)
 
         return NO_ERR
 
@@ -193,9 +204,9 @@ class Ur3Controller(object):
         ov = cf.obstructed_move(start,end,piece)
         lmv = cf.legal_move(start,end,piece)
 
-        if lmv != "move"
+        if lmv != "move":
             return "Not a legal move"
-        elif ov == "obstructed"
+        elif ov == "obstructed":
             return "The move is obstructed"
         return None
         
@@ -274,10 +285,37 @@ class Ur3Controller(object):
     def demo(self):
         """Demonstrate move functionality of ur3 arm controller."""
 
-        ID_GRAB = 205
+        ID_GRAB = 209
         # pos = np.array([[0.1, 0., 0.1]]).T # (220, 64)
         # pos = np.array([[0.2, 0.0, 0.1]]).T # (220, 159)
         self.move_theta(home)
+
+        while self.pieces is None:
+            rospy.loginfo('Waiting...')
+            rospy.sleep(0.5)
+
+        # Associate detected pieces to hardcoded board positions.
+        pos_ids = POS_DICT.keys()
+        pos_arr = np.array(POS_DICT.values())
+        pos_arr = pos_arr[:,:2] # remove z-dimension
+        pos_arr = pos_arr.T.reshape(1, 2, -1) # extend in 3D
+
+        piece_ids = self.pieces.keys()
+        piece_arr = np.array(self.pieces.values())
+
+        # n_pieces x n_positions
+        dists = np.linalg.norm(pos_arr - piece_arr, axis=1)
+        # mins = np.argmin(dists, axis=1)
+        # print(len(set(mins)), len(mins))
+        # assert len(set(mins)) == len(mins), 'Duplicate piece assignment detected.'
+
+        row_inds, col_inds = linear_sum_assignment(dists)
+        print(row_inds, col_inds)
+        print([piece_ids[r] for r in row_inds])
+        print([pos_ids[c] for c in col_inds])
+
+        # assignments = list(POS_DICT)[mins]
+        # print(assignments)
 
         # while self.pieces is None or ID_GRAB not in self.pieces:
         #     rospy.loginfo('Waiting...')
@@ -286,7 +324,7 @@ class Ur3Controller(object):
 
         # # self.move_pos(self.pieces[ID_GRAB])
         # start_pos = self.pieces[ID_GRAB] # A7
-        # end_pos = np.array([pos_dict['E6'][:3]]).T
+        # end_pos = np.array([POS_DICT['E6'][:3]]).T
 
         # self.move_block(start_pos, end_pos)
         # print(start_pos, end_pos)
