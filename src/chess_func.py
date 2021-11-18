@@ -1,50 +1,5 @@
 import numpy as np
 
-
-def char_range(c1, c2):
-    """Generates the characters from `c1` to `c2`, inclusive."""
-    if ord(c2) > ord(c1):
-        iters = range(ord(c1), ord(c2)+1, 1)
-    else:
-        iters = range(ord(c1), ord(c2)-1, -1)
-
-    return [chr(c) for c in iters]
-
-
-def num_range(n1, n2):
-    """Generates the numbers `n1` to `n2`, inclusive."""
-    n1 = int(n1)
-    n2 = int(n2)
-
-    if n2 > n1:
-        iters = range(n1, n2+1, 1)
-    else:
-        iters = range(n1, n2-1, -1)
-    
-    return [str(i) for i in iters]
-
-
-def gen_moves(start, end):
-    """Generates the sequence of moves from start to end. This assumes the moves are valid."""
-
-    assert start != end, 'Invalid move from %s to %s.' % (start, end)
-
-    rows = char_range(start[0], end[0])
-    cols = num_range(start[1], end[1])
-
-    # Account for column or row moves.
-    if len(rows) == 1:
-        rows = rows * len(cols)
-    if len(cols) == 1:
-        cols = cols * len(rows)
-
-    # Merge rows and columns into one list.
-    moves = []
-    for (n, b) in zip(rows, cols):
-        moves.append(n+b)
-
-    return moves
-
 # PosMat = np.array([     [[A8,loc,BRL],[B8,loc,BKL],[C8,loc,BBL],[D8,loc,BQ ],[E8,loc,BX ],[F8,loc,BBR],[G8,loc,BKR],[H8,loc,BRR]],
 #                         [[A7,loc,BP1],[B7,loc,BP2],[C7,loc,BP3],[D7,loc,BP4],[E7,loc,BP5],[F7,loc,BP6],[G7,loc,BP7],[H7,loc,BP8]],
 #                         [[A6,loc,0  ],[B6,loc,0  ],[C6,loc,0  ],[D6,loc,0  ],[E6,loc,0  ],[F6,loc,0  ],[G6,loc,0  ],[H6,loc,0  ]],
@@ -95,12 +50,22 @@ WP8 = 308
 WQ = 315
 WX = 316
 
+BLK_PAWNS = range(BP1, BP8+1)
+WHT_PAWNS = range(WP1, WP8+1)
+PAWNS = BLK_PAWNS + WHT_PAWNS
+KNIGHTS = [BKL, BKR, WKL, WKR]
+ROOKS = [BRL, BRR, WRL, WRR]
+BISHOPS = [BBL, BBR, WBL, WBR]
+QUEENS = [BQ, WQ]
+KINGS = [BX, WX]
+
+
 s = 50
 h = 80
 y = 0 
 x_o = 146
 y_o = 33
-Pos_Dict = {
+POS_DICT = {
     "A1": [x_o+s*7, y_o,     h],
     "A2": [x_o+s*6, y_o,     h],
     "A3": [x_o+s*5, y_o,     h],
@@ -175,99 +140,191 @@ Pos_Dict = {
 }
 
 
-def obstructed_move(start,end,piece): 
-
-    if piece[1] == "K":     #knight jumps all
-        return "move"
-
-    else: 
-        x123 = gen_moves(start,end)
-        #check path to target destination
-        #check each element ie chess square in the moves list below using CV 
-        moves = moves[1:]
-
-        for i in range(len(moves))
-            #check square with CV cmd here
-
-            # if square is empty:
-            #     pass
-            # elif  i == (len(moves) - 1) and square is not empty
-            #    return "take piece"
-
-            # else:
-            #     return "obstructed"
-
-    return "move"
-
-
-
-def legal_move(start,end,piece): 
+def legal_move(start, end, piece_id): 
+    """Determine whether a move is permitted based on the chess rules, the piece."""
 
     #Positive is right
-    deltaH = ord(dest[0]) - ord(pos[0])
+    deltaH = ord(end[0]) - ord(start[0])
     #Positive is up
-    deltaV = ord(dest[1]) - ord(pos[1])
+    deltaV = ord(end[1]) - ord(start[1])
 
-
-    if piece[1] == "R":     #rook
+    if piece_id in ROOKS:     #rook
         if deltaH != 0 and deltaV != 0:
-            raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+            return False
         else:
-            return "move"
+            return True
 
-    elif piece[1] =="K":    #knight     
+    elif piece_id in KNIGHTS:    #knight    
         if abs(deltaH) == 2 and abs(deltaV) == 1:
-            return "move" 
+            return True 
         elif abs(deltaH) == 1 and abs(deltaV) == 2:
-            return "move"
+            return True
         else:
-            raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+            return False
 
-    elif piece[1] == "B":   #bishop
+    elif piece_id in BISHOPS:   #bishop
         if abs(deltaH) == abs(deltaV):
-            return "move"
+            return True
         else:
-            raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+            return False
 
-    elif piece[1] == "Q":   #queen
+    elif piece_id in QUEENS:   #queen
         if abs(deltaH) == abs(deltaV):
-            return "move"
+            return True
         elif deltaH != 0 and deltaV == 0:
-            return "move"
+            return True
         elif deltaH == 0 and deltaV != 0:
-            return "move"
+            return True
         else: 
-            raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+            return False
 
-    elif piece[1] == "X":   #king
+    elif piece_id in KINGS:   #king
         if abs(deltaH) > 1 or abs(deltaV) > 1:
-            raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+            return False
         else:
-            return "move"
+            return True
 
-    elif piece[1] == "P":   #pawn
+    elif piece_id in PAWNS:   #pawn
         if  deltaH == 0 and abs(deltaV) == 1:  
-              if piece[:2] == "BP" and deltaV < 0:
-                  return "move"
-              elif  piece[:2] == "WP" and deltaV > 0:
-                  return "move"
+              if piece_id in BLK_PAWNS and deltaV < 0:
+                  return True
+              elif  piece_id in WHT_PAWNS and deltaV > 0:
+                  return True
               else:
-                  raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+                  return False
         
-        elif obstructed_move(start,end,piece) == "take piece" and abs(deltaV) = 1:
-              if piece[:2] == "BP" and deltaV == -1 and abs(deltaH) == 1:
-                  return "move"
-              elif  piece[:2] == "WP" and deltaV == 1 and abs(deltaH) == 1:
-                  return "move"
+        elif obstructed_move(start, end, piece_id) == "take piece_id" and abs(deltaV) == 1:
+              if piece_id in BLK_PAWNS and deltaV == -1 and abs(deltaH) == 1:
+                  return True
+              elif  piece_id in WHT_PAWNS and deltaV == 1 and abs(deltaH) == 1:
+                  return True
               else:
-                  raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+                  return False
 
         else:
-          raise AssertionError("illegal Move: %s from %s --> %s" % (piece, pos, dest))
+          return False
+    
+    assert False, 'Unreachable.'
 
 
+def user_input(): 
+    """prompt virtual player for a start and end location"""
+
+    start = 0
+    end = 0 
+
+    while start == end:
+        
+        start = 0
+        end = 0 
+
+        while start == 0:
+
+            input_string_srt = raw_input("Enter a start coordinate using an uppercase letter and an integer: ")
+
+            if len(input_string_srt) != 2: #more than 2 character input 
+                print("Please enter a start coordinate 2 characters long, an uppercase letter and an integer")
+
+            elif ord(input_string_srt[0]) > 90:  #entered upper case letters or to high of numbers
+                print("Please use upper case letters in your start coordinate")
+
+            elif ord(input_string_srt[0]) > 72 or int(input_string_srt[1]) > 8 or int(input_string_srt[1]) < 1: #not on board
+                print("That start coordinate is not on the board")
+
+            else: 
+                start = input_string_srt
+                print("Start Coordinate noted")
+
+
+        while end == 0: 
+
+            input_string_end = raw_input("Enter an end coordinate using an uppercase letter and an integer: ")
+
+            if len(input_string_end) != 2: #more than 2 character input 
+                print("Please enter an end coordinate 2 characters long, an uppercase letter and an integer")
+
+            elif ord(input_string_end[0]) > 90:  #entered upper case letters or to high of numbers
+                print("Please use upper case letters in your start coordinate")
+
+            elif ord(input_string_end[0]) > 72 or int(input_string_end[1]) > 8 or int(input_string_srt[1]) < 1: #not on board
+                print("That end coordinate is not on the board")
+
+            elif start == input_string_end:
+                print("You have to move.")
+
+            else: 
+                end = input_string_end
+                print("End Coordinate noted")
+
+    start, end = input_string_srt, input_string_end
+
+    #call CV matrix to return piece_id
+
+    print("RoboBoi will move the piece from the start coordinate " + input_string_srt + " to the end coordinate " + input_string_end)
+    return start, end 
+
+def map_piece_id_id(id):
+    """Map a given piece_id ID to its string representation for chess_func"""
+
+    if id is BRL:
+        return "BRL"
+    BRL = 209 
+    BRR = 210
+    BKL = 211
+    BKR = 212
+    BBL = 213
+    BBR = 214
+    BP1 = 201
+    BP2 = 202
+    BP3 = 203
+    BP4 = 204
+    BP5 = 205
+    BP6 = 206
+    BP7 = 207
+    BP8 = 208
+    BQ = 216
+    BX = 215
+
+def char_range(c1, c2):
+    """Generates the characters from `c1` to `c2`, inclusive."""
+    if ord(c2) > ord(c1):
+        iters = range(ord(c1), ord(c2)+1, 1)
     else:
-        return "blank"
+        iters = range(ord(c1), ord(c2)-1, -1)
 
-    return 
+    return [chr(c) for c in iters]
 
+
+def num_range(n1, n2):
+    """Generates the numbers `n1` to `n2`, inclusive."""
+    n1 = int(n1)
+    n2 = int(n2)
+
+    if n2 > n1:
+        iters = range(n1, n2+1, 1)
+    else:
+        iters = range(n1, n2-1, -1)
+    
+    return [str(i) for i in iters]
+
+
+def gen_moves(start, end):
+    """Generates the sequence of moves from start to end. This assumes the moves are valid."""
+
+    assert start != end, 'Invalid move from %s to %s.' % (start, end)
+
+    rows = char_range(start[0], end[0])
+    cols = num_range(start[1], end[1])
+
+    # Account for column or row moves.
+    if len(rows) == 1:
+        rows = rows * len(cols)
+    if len(cols) == 1:
+        cols = cols * len(rows)
+
+    # Merge rows and columns into one list.
+    moves = []
+    for (n, b) in zip(rows, cols):
+        moves.append(n+b)
+
+    return moves[1:]

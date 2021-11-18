@@ -20,10 +20,6 @@ from ur3_project.msg import Aruco, Box
 from header import *
 import chess_func as cf
 
-# Convert to numpy array in meters.
-from chess_func import Pos_Dict as POS_DICT
-POS_DICT = dict(map(lambda m: (m[0], 1e-3*np.array(m[1]).T), POS_DICT.items()))
-
 SUCTION_ON = True
 SUCTION_OFF = False
 
@@ -34,19 +30,21 @@ class Ur3Controller(object):
     n_joints = N_JOINTS
     IO_0 = False
 
-    def __init__(self, loop):
+    def __init__(self):
         self.thetas = np.zeros(self.n_joints)
         self.curr_dest = None
         self.suck_set = False
         self.suck_det = False
         self.pos_set = False
+        self.loop = rospy.Rate(SPIN_RATE)
+
+        self.board = None
         self.pieces = None
-        self.loop = loop
 
         self.cmd_pub = rospy.Publisher('ur3/command', command, queue_size=10)
         self.pos_sub = rospy.Subscriber('ur3/position', position, self.position_cb)
         self.grip_sub = rospy.Subscriber('ur3/gripper_input', gripper_input, self.gripper_cb)
-        self.aruco_sub = rospy.Subscriber('aruco_id', Aruco, self.aruco_cb)
+        # self.aruco_sub = rospy.Subscriber('aruco_id', Aruco, self.aruco_cb)
 
     def position_cb(self, msg):
         """Whenever ur3/position publishes info, update member data."""
@@ -58,13 +56,6 @@ class Ur3Controller(object):
         """When /ur3/gripper_input publishes something, update gripper I/O data."""
 
         self.suck_det = msg.DIGIN
-
-    def aruco_cb(self, msg):
-        """Update the chess dictionary whenever aruco_id gets published to."""
-
-        self.pieces = {}
-        for m in msg.boxes:
-            self.pieces[m.id] = np.array([[m.corners[0].x, m.corners[0].y]]).T
 
     def move_theta(self, theta_dest):
         """Move arm to joint angles specified by destination."""
@@ -195,139 +186,10 @@ class Ur3Controller(object):
 
         return self._fk([theta_1, theta_2, theta_3, theta_4, np.radians(-90), theta_6])
 
-    def validate_move(self,start,end,piece):
-        """
-        1. Is the the move obstructed?
-        2. Can the pieces do that?
-        3. Is there a pieces there?
-        """
-        ov = cf.obstructed_move(start,end,piece)
-        lmv = cf.legal_move(start,end,piece)
-
-        if lmv != "move":
-            return "Not a legal move"
-        elif ov == "obstructed":
-            return "The move is obstructed"
-        return None
-        
-
-    def usr_input(self): 
-        """prompt virtual player for a start and end location"""
-        start = 0
-        end = 0 
-
-        while start == end:
-
-            while start == 0:
-
-                input_string_srt = raw_input("Enter a start coordinate using an uppercase letter and an integer: ")
-  
-                if len(input_string_srt) != 2: #more than 2 character input 
-                    print("Please enter a start coordinate 2 characters long, an uppercase letter and an integer")
-
-                elif ord(input_string_srt[0]) > 90:  #entered upper case letters or to high of numbers
-                    print("Please use upper case letters in your start coordinate")
-
-                elif ord(input_string_srt[0]) > 72 or int(input_string_srt[1]) > 8: #not on board
-                    print("That start coordinate is not on the board")
-
-                else: 
-                    start = input_string_srt
-                    print("Start Coordinate noted")
-
-
-            while end == 0: 
-
-                input_string_end = raw_input("Enter an end coordinate using an uppercase letter and an integer: ")
-
-                if len(input_string_end) != 2: #more than 2 character input 
-                    print("Please enter an end coordinate 2 characters long, an uppercase letter and an integer")
-
-                elif ord(input_string_end[0]) > 90:  #entered upper case letters or to high of numbers
-                    print("Please use upper case letters in your start coordinate")
-
-                elif ord(input_string_end[0]) > 72 or int(input_string_end[1]) > 8: #not on board
-                    print("That end coordinate is not on the board")
-
-                else: 
-                    end = input_string_end
-                    print("End Coordinate noted")
-
-        start, end = input_string_srt, input_string_end
-
-        #call CV matrix to return piece
-
-        print("RoboBoi will move the piece from the start coordinate " + input_string_srt + " to the end coordinate " + input_string_end)
-        return start, end 
-
-
-    def move_piece(self):
-        """
-        1. user input 
-        2. validate_move
-        3. move_block
-        """
-        start, end = self.user_input()
-        #self.validate_move() needs to raise an error
-
-        o = cf.obstructed_move(start,end,piece)   #need to source from other file
-        o = 0 
-        off_board = [0,0,0,0]
-
-        if o == "take piece":
-            self.move_block(self,end,off_board)     #fling it
-            self.move_block(self,start,end)
-        else: 
-            self.move_block(self,start,end)
-
-        pass
-
     def demo(self):
-        """Demonstrate move functionality of ur3 arm controller."""
+        """Demonstrate basic move functionality of UR3 arm."""
 
-        ID_GRAB = 209
-        # pos = np.array([[0.1, 0., 0.1]]).T # (220, 64)
-        # pos = np.array([[0.2, 0.0, 0.1]]).T # (220, 159)
         self.move_theta(home)
-
-        while self.pieces is None:
-            rospy.loginfo('Waiting...')
-            rospy.sleep(0.5)
-
-        # Associate detected pieces to hardcoded board positions.
-        pos_ids = POS_DICT.keys()
-        pos_arr = np.array(POS_DICT.values())
-        pos_arr = pos_arr[:,:2] # remove z-dimension
-        pos_arr = pos_arr.T.reshape(1, 2, -1) # extend in 3D
-
-        piece_ids = self.pieces.keys()
-        piece_arr = np.array(self.pieces.values())
-
-        # n_pieces x n_positions
-        dists = np.linalg.norm(pos_arr - piece_arr, axis=1)
-        # mins = np.argmin(dists, axis=1)
-        # print(len(set(mins)), len(mins))
-        # assert len(set(mins)) == len(mins), 'Duplicate piece assignment detected.'
-
-        row_inds, col_inds = linear_sum_assignment(dists)
-        print(row_inds, col_inds)
-        print([piece_ids[r] for r in row_inds])
-        print([pos_ids[c] for c in col_inds])
-
-        # assignments = list(POS_DICT)[mins]
-        # print(assignments)
-
-        # while self.pieces is None or ID_GRAB not in self.pieces:
-        #     rospy.loginfo('Waiting...')
-        #     time.sleep(0.5)
-        # print(self.pieces)
-
-        # # self.move_pos(self.pieces[ID_GRAB])
-        # start_pos = self.pieces[ID_GRAB] # A7
-        # end_pos = np.array([POS_DICT['E6'][:3]]).T
-
-        # self.move_block(start_pos, end_pos)
-        # print(start_pos, end_pos)
-
-
-        
+        time.sleep(1)
+        self.move_theta(board)
+        time.sleep(1)

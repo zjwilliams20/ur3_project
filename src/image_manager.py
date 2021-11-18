@@ -14,9 +14,9 @@ from ur3_project.msg import Aruco, Box
 
 from header import *
 
-WHITE_PIECES = range(301, 317)
-BLACK_PIECES = range(201, 217)
-MISC_MARKERS = range(100, 104)
+WHITE_PIECES = range(301, 316+1)
+BLACK_PIECES = range(201, 216+1)
+MISC_MARKERS = range(100, 107+1)
 
 
 class ImageManager(object):
@@ -40,14 +40,6 @@ class ImageManager(object):
         # According to openCV, it's the "Minimum distance between any pair of corners from two different markers."
         self.aruco_params = aruco.DetectorParameters_create()
         self.aruco_params.minMarkerDistanceRate = 0.01
-        # self.aruco_params.minCornerDistanceRate = 0.01
-        # self.aruco_params.minDistanceToBorder = 1
-        # self.aruco_params.markerBorderBits = 1
-        # self.aruco_params.minOtsuStdDev = 1.0
-        # self.aruco_params.perspectiveRemovePixelPerCell = 20
-        # self.aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.2
-        # self.aruco_params.maxErroneousBitsInBorderRate = 0.5
-        # self.aruco_params.errorCorrectionRate = 0.3
 
         # Initialize necessary publishers and subscribers.
         self.img_pub = rospy.Publisher('cv_camera/image_raw', Image, queue_size=1)
@@ -84,12 +76,9 @@ class ImageManager(object):
         aruco_dict = aruco.Dictionary_get(self.CHESS_DICT)
         corners, ids, _ = aruco.detectMarkers(self.proc_image, aruco_dict, parameters=self.aruco_params)
 
-        # Remove detections with strange ID's, sometimes 3 horizontal squares gets picked up as 1023
-        valid_mask = ids <= 1000
-        # valid_mask =  [[id not in MISC_MARKERS] for id in ids]
-        # print(ids not in MISC_MARKERS)
+        # Remove alignment markers and other strange ID's, sometimes 3 horizontal squares gets picked up as 1023.
         if ids is not None:
-            # ids = ids[id for id in ids if id not in MISC_MARKERS] 
+            valid_mask =  np.array([[id not in MISC_MARKERS] for id in ids])
             ids = ids[valid_mask]
             corners = [corner for i, corner in enumerate(corners) if valid_mask[i]]
 
@@ -190,3 +179,7 @@ def calibrate(centroid_1, centroid_2):
     theta = np.degrees(np.arctan2(centroid_R[0] - centroid_L[0], centroid_R[1] - centroid_L[1]))
 
     return beta, theta
+
+# Calibration test-points; probably deprecated at this point.
+# pos = np.array([[0.1, 0., 0.1]]).T # (220, 64)
+# pos = np.array([[0.2, 0.0, 0.1]]).T # (220, 159)
