@@ -62,6 +62,7 @@ class ChessGame(object):
         """Validation checks on chess move."""
 
         piece = self.board[start]
+        print(piece)
         if self.obstructed_move(start, end, piece):
             print('Obstructed.')
             return False        
@@ -97,13 +98,84 @@ class ChessGame(object):
 
         # T/F of whether the piece is on the board.
         take_piece = end in self.board
-        off_board = [0, 0, 0, 0]
+        off_board = [0, 0, 80, 0]
+        piece_id_srt = self.board[start]
+        print(piece_id_srt)
+        
 
         if take_piece:
-            self.ur3_mgr.move_block(end,off_board) # fling it
-            self.ur3_mgr.move_block(start,end)
+            piece_id_end = self.board[end]
+            self.ur3_ctrl.move_block(end,off_board,piece_id_end) # fling it
+            self.ur3_ctrl.move_block(start,end,piece_id_srt)
         else: 
-            self.ur3_mgr.move_block(start,end)
+            self.ur3_ctrl.move_block(start,end,piece_id_srt)
+
+    def user_input(self): 
+        """prompt virtual player for a start and end location"""
+
+        start = 0
+        end = 0 
+
+        while start == end:
+
+            start = 0
+            end = 0 
+
+            while start == 0:
+
+                input_string_srt = raw_input("Enter a start coordinate using an uppercase letter and an integer: ")
+                srt = input_string_srt in self.board
+                print(input_string_srt in self.board)
+                
+                if len(input_string_srt) != 2: #more than 2 character input 
+                    print("Please enter a start coordinate 2 characters long, an uppercase letter and an integer")
+
+                elif ord(input_string_srt[0]) > 90:  #entered upper case letters or to high of numbers
+                    print("Please use upper case letters in your start coordinate")
+
+                elif ord(input_string_srt[0]) > 72 or int(input_string_srt[1]) > 8 or int(input_string_srt[1]) < 1: #not on board
+                    print("That start coordinate is not on the board")
+                
+                elif not srt:
+                    print("That is not a valid start position")
+        
+                else: 
+                    start = input_string_srt
+                    print("Start Coordinate noted")
+                    
+
+
+            while end == 0: 
+
+                input_string_end = raw_input("Enter an end coordinate using an uppercase letter and an integer: ")
+
+                if len(input_string_end) != 2: #more than 2 character input 
+                    print("Please enter an end coordinate 2 characters long, an uppercase letter and an integer")
+
+                elif ord(input_string_end[0]) > 90:  #entered upper case letters or to high of numbers
+                    print("Please use upper case letters in your start coordinate")
+
+                elif ord(input_string_end[0]) > 72 or int(input_string_end[1]) > 8 or int(input_string_srt[1]) < 1: #not on board
+                    print("That end coordinate is not on the board")
+
+                elif start == input_string_end:
+                    print("You have to move.")
+                
+                # elif self.board[input_string_end] < 300:
+                #     print("Another of your pieces already occupies that end position")
+
+                else: 
+                    end = input_string_end
+                    print("End Coordinate noted")
+
+        start, end = input_string_srt, input_string_end
+
+        #call CV matrix to return piece_id
+
+        print("RoboBoi will move the piece from the start coordinate " + input_string_srt + " to the end coordinate " + input_string_end)
+        print(self.board)
+        return start, end 
+
 
     def play(self):
         """Play the chess game with the ur3_controller and the image manager."""
@@ -113,10 +185,11 @@ class ChessGame(object):
         while self.board is None:
             rospy.loginfo('Waiting for camera...')
             rospy.sleep(1)
-
-        # start, end = cf.user_input()
-        start = 'B1'
-        end = 'C3'
+        
+        # start = 'B1'
+        # end = 'C3'
+        start, end = self.user_input()
+            
         print('Start: ' + start + '\tEnd: ' + end)
 
         if self.validate_move(start, end):

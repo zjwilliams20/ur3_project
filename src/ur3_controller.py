@@ -17,8 +17,13 @@ from ur3_driver.msg import position
 from ur3_driver.msg import gripper_input
 from ur3_project.msg import Aruco, Box
 
+
 from header import *
 import chess_func as cf
+
+
+from chess_func import POS_DICT, KNIGHTS, QUEENS, KINGS, PAWNS 
+POS_DICT = dict(map(lambda m: (m[0], 1e-3*np.array(m[1]).T), POS_DICT.items()))
 
 SUCTION_ON = True
 SUCTION_OFF = False
@@ -91,19 +96,40 @@ class Ur3Controller(object):
         theta_dest = self._invk(pos_dest, yaw)
         self.move_theta(theta_dest)
 
-    def move_block(self, start, end):
+    def move_block(self, start, end, piece_id):
         """Move block from starting to end position."""
+        if piece_id in PAWNS:
+            P_OFFSET = 0.025
+        elif piece_id in QUEENS or piece_id in KINGS: 
+            P_OFFSET = 0.065
+        else:
+            P_OFFSET = 0.045
+        Z_OFFSET = 0.1
+        print("P Offset: " + str(P_OFFSET))
 
+       
         offset = np.array([
             [0, 0, Z_OFFSET]
         ]).T
-        start_stage = start + offset
-        end_stage = end + offset
+        P_offset = np.array([
+            [0, 0, P_OFFSET]
+        ]).T
+
+        start_posit = np.array([POS_DICT[start][:3]]).T + P_offset
+        print("start_posit: " + str(start_posit))
+        end_posit = np.array([POS_DICT[end][:3]]).T + P_offset
+        print("end_posit: " + str(end_posit))
+        start_stage = start_posit + offset
+        end_stage = end_posit + offset
 
         self.move_pos(start_stage)
-        self.move_pos(start)
+        time.sleep(1)
         self.sucker(SUCTION_ON)
+        time.sleep(1)
+        self.move_pos(start_posit)
+        time.sleep(1)
         self.move_pos(start_stage)
+        time.sleep(1)
 
         if not self.suck_det:
             self.sucker(SUCTION_OFF)
@@ -111,10 +137,12 @@ class Ur3Controller(object):
             warn("Couldn't find block...")
             return NO_ERR
 
-        self.move_pos(end)
+        self.move_pos(end_stage)
+        time.sleep(1)
+        self.move_pos(end_posit)
         time.sleep(1)
         self.sucker(SUCTION_OFF)
-        time.sleep(2)
+        time.sleep(1)
         self.move_pos(end_stage)
 
         return NO_ERR

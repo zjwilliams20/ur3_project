@@ -61,7 +61,7 @@ KINGS = [BX, WX]
 
 
 s = 50
-h = 80
+h = 0
 y = 0 
 x_o = 146
 y_o = 33
@@ -207,61 +207,6 @@ def legal_move(start, end, piece_id):
     assert False, 'Unreachable.'
 
 
-def user_input(): 
-    """prompt virtual player for a start and end location"""
-
-    start = 0
-    end = 0 
-
-    while start == end:
-        
-        start = 0
-        end = 0 
-
-        while start == 0:
-
-            input_string_srt = raw_input("Enter a start coordinate using an uppercase letter and an integer: ")
-
-            if len(input_string_srt) != 2: #more than 2 character input 
-                print("Please enter a start coordinate 2 characters long, an uppercase letter and an integer")
-
-            elif ord(input_string_srt[0]) > 90:  #entered upper case letters or to high of numbers
-                print("Please use upper case letters in your start coordinate")
-
-            elif ord(input_string_srt[0]) > 72 or int(input_string_srt[1]) > 8 or int(input_string_srt[1]) < 1: #not on board
-                print("That start coordinate is not on the board")
-
-            else: 
-                start = input_string_srt
-                print("Start Coordinate noted")
-
-
-        while end == 0: 
-
-            input_string_end = raw_input("Enter an end coordinate using an uppercase letter and an integer: ")
-
-            if len(input_string_end) != 2: #more than 2 character input 
-                print("Please enter an end coordinate 2 characters long, an uppercase letter and an integer")
-
-            elif ord(input_string_end[0]) > 90:  #entered upper case letters or to high of numbers
-                print("Please use upper case letters in your start coordinate")
-
-            elif ord(input_string_end[0]) > 72 or int(input_string_end[1]) > 8 or int(input_string_srt[1]) < 1: #not on board
-                print("That end coordinate is not on the board")
-
-            elif start == input_string_end:
-                print("You have to move.")
-
-            else: 
-                end = input_string_end
-                print("End Coordinate noted")
-
-    start, end = input_string_srt, input_string_end
-
-    #call CV matrix to return piece_id
-
-    print("RoboBoi will move the piece from the start coordinate " + input_string_srt + " to the end coordinate " + input_string_end)
-    return start, end 
 
 def map_piece_id_id(id):
     """Map a given piece_id ID to its string representation for chess_func"""
