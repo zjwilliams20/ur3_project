@@ -78,7 +78,7 @@ class Ur3Controller(object):
 
             if all(abs(self.thetas - theta_dest) < DIST_TOL):
                 at_goal = True
-                rospy.loginfo("Goal is reached!")
+                #rospy.loginfo("Goal is reached!")
             self.loop.sleep()
 
             if spin_count > SPIN_RATE*5:
@@ -99,51 +99,69 @@ class Ur3Controller(object):
     def move_block(self, start, end, piece_id):
         """Move block from starting to end position."""
         if piece_id in PAWNS:
-            P_OFFSET = 0.025
+            P_OFFSET = 0.022
         elif piece_id in QUEENS or piece_id in KINGS: 
-            P_OFFSET = 0.065
+            P_OFFSET = 0.062
         else:
-            P_OFFSET = 0.045
-        Z_OFFSET = 0.1
-        print("P Offset: " + str(P_OFFSET))
+            P_OFFSET = 0.042
 
-       
-        offset = np.array([
-            [0, 0, Z_OFFSET]
-        ]).T
-        P_offset = np.array([
-            [0, 0, P_OFFSET]
-        ]).T
+        Z_OFFSET = 0.1
+        offset = np.array([ [0, 0, Z_OFFSET] ]).T
+        P_offset = np.array([ [0, 0, P_OFFSET] ]).T
 
         start_posit = np.array([POS_DICT[start][:3]]).T + P_offset
-        print("start_posit: " + str(start_posit))
-        end_posit = np.array([POS_DICT[end][:3]]).T + P_offset
-        print("end_posit: " + str(end_posit))
+        # print("start_posit: " + str(start_posit))
+        
         start_stage = start_posit + offset
-        end_stage = end_posit + offset
 
-        self.move_pos(start_stage)
-        time.sleep(1)
-        self.sucker(SUCTION_ON)
-        time.sleep(1)
-        self.move_pos(start_posit)
-        time.sleep(1)
-        self.move_pos(start_stage)
-        time.sleep(1)
+        if len(end) == 2: 
+            end_posit = np.array([POS_DICT[end][:3]]).T + P_offset
+            # print("end_posit: " + str(end_posit))
+            
+            end_stage = end_posit + offset
 
-        if not self.suck_det:
-            self.sucker(SUCTION_OFF)
             self.move_pos(start_stage)
-            warn("Couldn't find block...")
-            return NO_ERR
+            time.sleep(1)
+            self.sucker(SUCTION_ON)
+            time.sleep(1)
+            self.move_pos(start_posit)
+            time.sleep(1)
+            self.move_pos(start_stage)
 
-        self.move_pos(end_stage)
-        time.sleep(1)
-        self.move_pos(end_posit)
-        time.sleep(1)
-        self.sucker(SUCTION_OFF)
-        time.sleep(1)
-        self.move_pos(end_stage)
+            if not self.suck_det:
+                self.sucker(SUCTION_OFF)
+                self.move_pos(start_stage)
+                warn("Couldn't find block...")
+                return NO_ERR
+
+            self.move_pos(end_stage)
+            time.sleep(1)
+            self.move_pos(end_posit)
+            time.sleep(1)
+            self.sucker(SUCTION_OFF)
+            time.sleep(1)
+            self.move_pos(end_stage)
+
+        else:
+            self.move_pos(start_stage)
+            time.sleep(1)
+            self.sucker(SUCTION_ON)
+            time.sleep(1)
+            self.move_pos(start_posit)
+            time.sleep(1)
+            self.move_pos(start_stage)
+    
+            if not self.suck_det:
+                self.sucker(SUCTION_OFF)
+                self.move_pos(start_stage)
+                warn("Couldn't find block...")
+                return NO_ERR
+    
+            self.move_theta(home)
+            self.sucker(SUCTION_OFF)
+            
+
+        
 
         return NO_ERR
 

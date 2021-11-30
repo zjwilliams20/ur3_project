@@ -1,4 +1,5 @@
 import numpy as np
+import chess 
 
 # PosMat = np.array([     [[A8,loc,BRL],[B8,loc,BKL],[C8,loc,BBL],[D8,loc,BQ ],[E8,loc,BX ],[F8,loc,BBR],[G8,loc,BKR],[H8,loc,BRR]],
 #                         [[A7,loc,BP1],[B7,loc,BP2],[C7,loc,BP3],[D7,loc,BP4],[E7,loc,BP5],[F7,loc,BP6],[G7,loc,BP7],[H7,loc,BP8]],
@@ -138,75 +139,6 @@ POS_DICT = {
     "H7": [x_o+s*1, y_o+s*7, h],
     "H8": [x_o+s*0, y_o+s*7, h]
 }
-
-
-def legal_move(start, end, piece_id): 
-    """Determine whether a move is permitted based on the chess rules, the piece."""
-
-    #Positive is right
-    deltaH = ord(end[0]) - ord(start[0])
-    #Positive is up
-    deltaV = ord(end[1]) - ord(start[1])
-
-    if piece_id in ROOKS:     #rook
-        if deltaH != 0 and deltaV != 0:
-            return False
-        else:
-            return True
-
-    elif piece_id in KNIGHTS:    #knight    
-        if abs(deltaH) == 2 and abs(deltaV) == 1:
-            return True 
-        elif abs(deltaH) == 1 and abs(deltaV) == 2:
-            return True
-        else:
-            return False
-
-    elif piece_id in BISHOPS:   #bishop
-        if abs(deltaH) == abs(deltaV):
-            return True
-        else:
-            return False
-
-    elif piece_id in QUEENS:   #queen
-        if abs(deltaH) == abs(deltaV):
-            return True
-        elif deltaH != 0 and deltaV == 0:
-            return True
-        elif deltaH == 0 and deltaV != 0:
-            return True
-        else: 
-            return False
-
-    elif piece_id in KINGS:   #king
-        if abs(deltaH) > 1 or abs(deltaV) > 1:
-            return False
-        else:
-            return True
-
-    elif piece_id in PAWNS:   #pawn
-        if  deltaH == 0 and abs(deltaV) == 1:  
-              if piece_id in BLK_PAWNS and deltaV < 0:
-                  return True
-              elif  piece_id in WHT_PAWNS and deltaV > 0:
-                  return True
-              else:
-                  return False
-        
-        elif obstructed_move(start, end, piece_id) == "take piece_id" and abs(deltaV) == 1:
-              if piece_id in BLK_PAWNS and deltaV == -1 and abs(deltaH) == 1:
-                  return True
-              elif  piece_id in WHT_PAWNS and deltaV == 1 and abs(deltaH) == 1:
-                  return True
-              else:
-                  return False
-
-        else:
-          return False
-    
-    assert False, 'Unreachable.'
-
-
 
 def map_piece_id_id(id):
     """Map a given piece_id ID to its string representation for chess_func"""

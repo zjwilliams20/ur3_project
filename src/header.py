@@ -112,4 +112,3 @@ STAGE_LOC = board
 
 NO_ERR = 0
 
-Z_OFFSET = 0.100

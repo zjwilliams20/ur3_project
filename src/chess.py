@@ -9,7 +9,8 @@ from ur3_controller import Ur3Controller
 from ur3_project.msg import Aruco, Box
 
 # Convert to numpy array in meters.
-from chess_func import POS_DICT, KNIGHTS
+from chess_func import POS_DICT, KNIGHTS, PAWNS, BLK_PAWNS, WHT_PAWNS, PAWNS, ROOKS, BISHOPS, QUEENS, KINGS
+
 POS_DICT = dict(map(lambda m: (m[0], 1e-3*np.array(m[1]).T), POS_DICT.items()))
 
 import chess_func as cf
@@ -48,9 +49,11 @@ class ChessGame(object):
         # n_pieces x n_positions
         dists = np.linalg.norm(pos_arr - piece_arr, axis=1)
         mins = np.argmin(dists, axis=1)
-        assert len(set(mins)) == len(mins), 'Duplicate piece assignment detected.'
+        if len(set(mins)) != len(mins):
+            return
 
         self.board = {pos_ids[m]: piece_ids[i] for i, m in enumerate(mins)}
+        # print(self.board)
 
         # Alternative LSA association that I started but shouldn't be needed.
         # row_inds, col_inds = linear_sum_assignment(dists)
@@ -58,23 +61,36 @@ class ChessGame(object):
         # print([piece_ids[r] for r in row_inds])
         # print([pos_ids[c] for c in col_inds])
 
-    def validate_move(self, start, end):
+    def validate_move(self, start, end, piece_id):
         """Validation checks on chess move."""
+        deltaH = abs(ord(end[0]) - ord(start[0]))
+        #Positive is up
+        deltaV = abs(ord(end[1]) - ord(start[1]))
 
         piece = self.board[start]
-        print(piece)
-        if self.obstructed_move(start, end, piece):
-            print('Obstructed.')
-            return False        
-        if not cf.legal_move(start, end, piece):
-            print('Illegal')
+
+        if self.obstructed_move(start, end, piece) and deltaV == 1 and deltaH == 1 and piece_id in PAWNS:
+            return True
+
+        elif self.obstructed_move(start, end, piece) and deltaH == 0 and deltaV == 1 and piece_id in PAWNS:
+            print('The piece you wish to move cannot jump other pieces. Please enter a new move.')
+            return False  
+
+        elif self.obstructed_move(start, end, piece):
+            print('The piece you wish to move cannot jump other pieces. Please enter a new move.')
+            return False  
+
+
+        if not self.legal_move(start, end, piece):
+            print('The piece you are trying to move cannot legally move in that path.')
             return False
+
         return True
 
     def obstructed_move(self, start, end, piece_id):
         """Determine whether there are pieces in the way moving from start to end."""
-
-        print(piece_id, KNIGHTS)
+   
+        #print(piece_id, KNIGHTS)
         if piece_id in KNIGHTS: # knight jumps all
             return False
 
@@ -82,12 +98,90 @@ class ChessGame(object):
         moves = cf.gen_moves(start, end)
         # print(self.board)
         # print(moves)
-        for move in moves[:-1]:
-            # Check each element ie chess square in the moves list below using CV 
-            print(move)
-            if move in self.board:
-                return True
+        if piece_id in PAWNS:
+            for move in moves:
+                # Check each element ie chess square in the moves list below using CV 
+                #print("move list: " + str(move))
+                if move in self.board:
+                    return True
+        else:
+            for move in moves[:-1]:
+                # Check each element ie chess square in the moves list below using CV 
+                #print("move list: " + str(move))
+                if move in self.board:
+                    return True
+        
         return False
+
+    def legal_move(self, start, end, piece_id): 
+        """Determine whether a move is permitted based on the chess rules, the piece."""
+
+        #Positive is right
+        deltaH = ord(end[0]) - ord(start[0])
+        #Positive is up
+        deltaV = ord(end[1]) - ord(start[1])
+
+        if piece_id in ROOKS:     #rook
+            if deltaH != 0 and deltaV != 0:
+                return False
+            else:
+                return True
+
+        elif piece_id in KNIGHTS:    #knight    
+            if abs(deltaH) == 2 and abs(deltaV) == 1:
+                return True 
+            elif abs(deltaH) == 1 and abs(deltaV) == 2:
+                return True
+            else:
+                return False
+
+        elif piece_id in BISHOPS:   #bishop
+            if abs(deltaH) == abs(deltaV):
+                return True
+            else:
+                return False
+
+        elif piece_id in QUEENS:   #queen
+            if abs(deltaH) == abs(deltaV):
+                return True
+            elif deltaH != 0 and deltaV == 0:
+                return True
+            elif deltaH == 0 and deltaV != 0:
+                return True
+            else: 
+                return False
+
+        elif piece_id in KINGS:   #king
+            if abs(deltaH) > 1 or abs(deltaV) > 1:
+                return False
+            else:
+                return True
+
+        elif piece_id in PAWNS:   #pawn
+            if  deltaH == 0 and abs(deltaV) == 1 and not self.obstructed_move(start, end, piece_id):  
+                  if piece_id in BLK_PAWNS and deltaV < 0:
+                      return True
+                  elif  piece_id in WHT_PAWNS and deltaV > 0:
+                      return True
+                  else:
+                      return False
+
+            elif self.obstructed_move(start, end, piece_id) and abs(deltaV) == 1 and abs(deltaH) == 1:
+                  if piece_id in BLK_PAWNS and deltaV == -1 and abs(deltaH) == 1:
+                      return True
+                  elif  piece_id in WHT_PAWNS and deltaV == 1 and abs(deltaH) == 1:
+                      return True
+                  else:
+                      return False
+            elif start[1] == "7" and abs(deltaV) == 2: 
+                return True 
+
+            else:
+                return False
+
+        else:
+            assert False, 'Unreachable.'
+
 
     def move_piece(self, start, end):
         """
@@ -97,16 +191,19 @@ class ChessGame(object):
         """
 
         # T/F of whether the piece is on the board.
+        global counter
         take_piece = end in self.board
-        off_board = [0, 0, 80, 0]
+        off_board = np.array( [0, 0, 0, 0] ).T
         piece_id_srt = self.board[start]
-        print(piece_id_srt)
+        
         
 
         if take_piece:
             piece_id_end = self.board[end]
             self.ur3_ctrl.move_block(end,off_board,piece_id_end) # fling it
             self.ur3_ctrl.move_block(start,end,piece_id_srt)
+        
+
         else: 
             self.ur3_ctrl.move_block(start,end,piece_id_srt)
 
@@ -125,8 +222,7 @@ class ChessGame(object):
 
                 input_string_srt = raw_input("Enter a start coordinate using an uppercase letter and an integer: ")
                 srt = input_string_srt in self.board
-                print(input_string_srt in self.board)
-                
+            
                 if len(input_string_srt) != 2: #more than 2 character input 
                     print("Please enter a start coordinate 2 characters long, an uppercase letter and an integer")
 
@@ -148,6 +244,7 @@ class ChessGame(object):
             while end == 0: 
 
                 input_string_end = raw_input("Enter an end coordinate using an uppercase letter and an integer: ")
+                ends = input_string_end in self.board
 
                 if len(input_string_end) != 2: #more than 2 character input 
                     print("Please enter an end coordinate 2 characters long, an uppercase letter and an integer")
@@ -161,8 +258,13 @@ class ChessGame(object):
                 elif start == input_string_end:
                     print("You have to move.")
                 
-                # elif self.board[input_string_end] < 300:
-                #     print("Another of your pieces already occupies that end position")
+                elif ends:
+                        piece_id_endi = self.board[input_string_end]
+                        if piece_id_endi < 300:
+                            print("Another one of your pieces already occupies that end position")
+                        else:
+                            end = input_string_end
+                            print("End Coordinate noted")
 
                 else: 
                     end = input_string_end
@@ -170,10 +272,8 @@ class ChessGame(object):
 
         start, end = input_string_srt, input_string_end
 
-        #call CV matrix to return piece_id
-
         print("RoboBoi will move the piece from the start coordinate " + input_string_srt + " to the end coordinate " + input_string_end)
-        print(self.board)
+        print("")
         return start, end 
 
 
@@ -181,6 +281,11 @@ class ChessGame(object):
         """Play the chess game with the ur3_controller and the image manager."""
 
         self.ur3_ctrl.move_theta(home)
+        # right = np.radians([270, 25, -25, -90, 0, 100])
+        # left = np.radians([90, 25, -25, -90, 0, 100])
+
+        # self.ur3_ctrl.move_theta(right)
+        # self.ur3_ctrl.move_theta(left)
 
         while self.board is None:
             rospy.loginfo('Waiting for camera...')
@@ -188,21 +293,22 @@ class ChessGame(object):
         
         # start = 'B1'
         # end = 'C3'
-        start, end = self.user_input()
-            
-        print('Start: ' + start + '\tEnd: ' + end)
+        global counter
+        counter = 0 
+        gameon = 0
 
-        if self.validate_move(start, end):
-            print('Valid move.')
-        else:
-            print('Invalid move.')
+        while gameon < 20:
 
-        self.move_piece(start, end)
+            start, end = self.user_input()
+            piece = self.board[start]
+            while not self.validate_move(start, end, piece):
+                start, end = self.user_input()
+                
+            self.move_piece(start,end)
+            self.ur3_ctrl.move_theta(home)
+            gameon = gameon + 1 
 
-        # # self.move_pos(self.pieces[ID_GRAB])
-        # start_pos = self.pieces[ID_GRAB] # A7
-        # end_pos = np.array([POS_DICT['E6'][:3]]).T
-
-        # self.move_block(start_pos, end_pos)
-        # print(start_pos, end_pos)
+        print("Test game complete")
+        exit()
+        
 
